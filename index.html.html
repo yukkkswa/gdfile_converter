@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GD Level Converter</title>
+<style>
+:root{--bg:#06070d;--glass:rgba(255,255,255,.045);--glass2:rgba(255,255,255,.08);--line:rgba(255,255,255,.1);--text:#eef0f6;--muted:#8b90a3;--a:#8b7bff;--b:#38d9f5;--ok:#5eead4;--warn:#fbbf24;--err:#fb7185;--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*,*:before,*:after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);font:15px/1.55 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;position:relative;overflow-x:hidden}
+.bg{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.bg i{position:absolute;border-radius:50%;filter:blur(110px);opacity:.55;animation:drift 22s ease-in-out infinite alternate}
+.bg i:nth-child(1){width:560px;height:560px;left:-140px;top:-160px;background:#5b3df5}
+.bg i:nth-child(2){width:520px;height:520px;right:-160px;top:8%;background:#0ea5c6;animation-delay:-8s;animation-duration:26s}
+.bg i:nth-child(3){width:480px;height:480px;left:30%;bottom:-220px;background:#c026a3;opacity:.35;animation-delay:-14s;animation-duration:30s}
+@keyframes drift{to{transform:translate(70px,50px) scale(1.15)}}
+.bg:before{content:"";position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.16) 1px,transparent 1.2px);background-size:28px 28px;-webkit-mask-image:radial-gradient(ellipse at 50% 30%,#000 0,transparent 70%);mask-image:radial-gradient(ellipse at 50% 30%,#000 0,transparent 70%);z-index:1}
+.bg:after{content:"";position:absolute;inset:0;z-index:2;opacity:.07;mix-blend-mode:overlay;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+@media (prefers-reduced-motion:reduce){.bg i{animation:none}}
+main{position:relative;z-index:1;max-width:860px;margin:0 auto;padding:56px 18px 64px}
+h1{margin:0;font-size:clamp(30px,6vw,46px);line-height:1.05;font-weight:700;letter-spacing:-.035em;background:linear-gradient(120deg,#fff 20%,#b9b2ff 60%,var(--b));-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{color:var(--muted);margin:10px 0 34px;font-size:16px}
+section{background:var(--glass);border:1px solid var(--line);border-radius:18px;padding:22px;margin-bottom:16px;backdrop-filter:blur(18px) saturate(140%);-webkit-backdrop-filter:blur(18px) saturate(140%);box-shadow:0 1px 0 rgba(255,255,255,.06) inset,0 24px 60px -20px rgba(0,0,0,.6)}
+h2{margin:0 0 14px;font-size:11.5px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media (max-width:720px){.cards{grid-template-columns:1fr}}
+.card{padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:var(--glass);transition:border-color .2s,background .2s,transform .2s}
+.card:hover{border-color:rgba(139,123,255,.55);background:var(--glass2);transform:translateY(-2px)}
+.card h3{margin:0 0 2px;font:600 17px var(--mono);letter-spacing:-.02em}
+.card .v{display:block;font-size:12px;color:var(--b);margin-bottom:6px;font-weight:500}
+.card p{margin:0;font-size:13px;color:var(--muted)}
+#drop{display:flex;flex-direction:column;align-items:center;gap:4px;border:1px dashed rgba(255,255,255,.22);border-radius:14px;padding:28px 16px;text-align:center;color:var(--muted);cursor:pointer;margin-bottom:12px;transition:all .2s;background:rgba(255,255,255,.02)}
+#drop:hover,#drop.over,#drop:focus-visible{border-color:var(--a);background:rgba(139,123,255,.09);color:var(--text);outline:none;box-shadow:0 0 0 4px rgba(139,123,255,.12)}
+#drop svg{width:26px;height:26px;stroke:var(--a);margin-bottom:4px}
+#drop b{color:var(--text);font-weight:600}
+#fname{font:12px var(--mono);opacity:.8}
+textarea{width:100%;min-height:150px;resize:vertical;font:12px/1.5 var(--mono);background:rgba(0,0,0,.35);color:#cdd3ea;border:1px solid var(--line);border-radius:12px;padding:14px;transition:border-color .2s,box-shadow .2s}
+textarea::placeholder{color:#5d6277}
+textarea:focus{outline:none;border-color:var(--a);box-shadow:0 0 0 4px rgba(139,123,255,.14)}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:14px}
+button,select{font:inherit;font-size:14px;color:var(--text);background:var(--glass2);border:1px solid var(--line);border-radius:10px;padding:9px 16px;cursor:pointer;transition:transform .15s,background .2s,border-color .2s,box-shadow .2s}
+button:hover:not(:disabled){background:rgba(255,255,255,.13);border-color:rgba(255,255,255,.28);transform:translateY(-1px)}
+button:disabled{opacity:.3;cursor:not-allowed}
+button.primary{font-weight:600;padding:10px 26px;color:#fff;border:0;background:linear-gradient(120deg,#7c5cff,#2bb8e6);box-shadow:0 8px 28px -8px rgba(124,92,255,.8)}
+button.primary:hover:not(:disabled){background:linear-gradient(120deg,#8d70ff,#3cc8f5);box-shadow:0 12px 34px -8px rgba(124,92,255,.95);border:0}
+.dl:before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:9px;background:var(--c,var(--a));box-shadow:0 0 8px var(--c,var(--a))}
+.dl[data-t="gdlvl"]{--c:#8b7bff}.dl[data-t="gmd"]{--c:#f472b6}.dl[data-t="xml"]{--c:#38d9f5}.dl[data-t="txt"]{--c:#fbbf24}
+label{color:var(--muted);display:inline-flex;gap:10px;align-items:center;cursor:pointer;font-size:14px}
+input[type=checkbox]{appearance:none;-webkit-appearance:none;width:36px;height:20px;border-radius:99px;background:rgba(255,255,255,.12);position:relative;cursor:pointer;transition:background .2s;margin:0}
+input[type=checkbox]:after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:left .2s}
+input[type=checkbox]:checked{background:var(--a)}
+input[type=checkbox]:checked:after{left:18px}
+select{padding:7px 12px}
+#status{margin-top:14px;font-size:13.5px;min-height:1.5em}
+#status .ok{color:var(--ok)}#status .warn{color:var(--warn)}#status .err{color:var(--err)}
+#meta{font:12px/1.65 var(--mono);color:var(--muted);margin:10px 0 0;white-space:pre-wrap}
+#meta:not(:empty){padding:12px 14px;border:1px solid var(--line);background:rgba(0,0,0,.28);border-radius:10px}
+</style>
+</head>
+<body>
+<div class="bg" aria-hidden="true"><i></i><i></i><i></i></div>
+<main>
+<h1>GD Level Converter</h1>
+<p class="sub">Convert .gdlvl and .gmd level files in your browser.</p>
+
+<section aria-labelledby="fmt">
+<h2 id="fmt">Formats</h2>
+<div class="cards">
+<div class="card"><h3>.gdlvl</h3><span class="v">GD 2.2091+</span><p>Official native level export.</p></div>
+<div class="card"><h3>.gmd</h3><span class="v">GD Share mod</span><p>Legacy format for older tools.</p></div>
+<div class="card"><h3>XML / Plist</h3><span class="v">.xml · .txt</span><p>Uncompressed, for editing and debugging.</p></div>
+</div>
+</section>
+
+<section aria-labelledby="inp">
+<h2 id="inp">Input</h2>
+<div id="drop" tabindex="0" role="button" aria-label="Choose or drop a level file"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4m0 0l-4 4m4-4l4 4M4 16v3a1 1 0 001 1h14a1 1 0 001-1v-3"/></svg><span><b>Drop a file</b> or click to browse</span><span id="fname">.gdlvl, .gmd, .xml, .txt</span></div>
+<input type="file" id="file" accept=".gdlvl,.gmd,.xml,.txt,.plist" hidden>
+<textarea id="in" spellcheck="false" placeholder="…or paste an encoded string or raw XML/Plist"></textarea>
+<div class="row">
+<button id="go" class="primary">Convert File</button>
+<button id="clear">Clear</button>
+<label><input type="checkbox" id="k4"> Decode level data (k4)</label>
+</div>
+<div id="status" role="status" aria-live="polite"></div>
+<div id="meta"></div>
+</section>
+
+<section aria-labelledby="outp">
+<h2 id="outp">Output</h2>
+<div class="row" style="margin-top:0"><label>Preview <select id="view"><option value="auto">Auto</option><option value="xml">Decoded XML/Plist</option><option value="enc">Encoded string</option></select></label></div>
+<textarea id="out" readonly spellcheck="false" style="margin-top:12px" placeholder="Result appears here"></textarea>
+<div class="row">
+<button class="dl" data-t="gdlvl" disabled>Download .gdlvl</button>
+<button class="dl" data-t="gmd" disabled>Download .gmd</button>
+<button class="dl" data-t="xml" disabled>Download .xml</button>
+<button class="dl" data-t="txt" disabled>Download .txt</button>
+<button id="copy" disabled>Copy</button>
+</div>
+</section>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+<script>
+(function(){
+"use strict";
+var $=function(i){return document.getElementById(i)};
+var te=new TextEncoder(),td=new TextDecoder("utf-8");
+var fileBytes=null,fileBase="",R=null;
+
+/* ---------- codec helpers ---------- */
+function toB64Url(u8){
+  var s="",i,n=8192;
+  for(i=0;i<u8.length;i+=n)s+=String.fromCharCode.apply(null,u8.subarray(i,i+n));
+  return btoa(s).replace(/\+/g,"-").replace(/\//g,"_");   /* URL-safe, keeps = padding like GD */
+}
+function fromB64(str){
+  var s=str.replace(/\s+/g,"").replace(/-/g,"+").replace(/_/g,"/");
+  if(!/^[A-Za-z0-9+\/]+={0,2}$/.test(s))throw new Error("Not valid Base64.");
+  while(s.length%4)s+="=";
+  var b=atob(s),u=new Uint8Array(b.length),i;
+  for(i=0;i<b.length;i++)u[i]=b.charCodeAt(i);
+  return u;
+}
+async function stream(u8,Ctor,fmt){
+  var s=new Blob([u8]).stream().pipeThrough(new Ctor(fmt));
+  return new Uint8Array(await new Response(s).arrayBuffer());
+}
+async function gzip(u8){
+  var o;
+  if(window.pako)o=pako.gzip(u8);
+  else if(window.CompressionStream)o=await stream(u8,CompressionStream,"gzip");
+  else throw new Error("No Gzip engine available (pako did not load and this browser lacks CompressionStream).");
+  o[9]=10;                                                 /* match GD's gzip header (OS byte) */
+  return o;
+}
+async function gunzip(u8){
+  try{
+    if(window.pako)return pako.inflate(u8);
+    if(window.DecompressionStream)return await stream(u8,DecompressionStream,"gzip");
+  }catch(e){throw new Error("Gzip data is corrupt or truncated.")}
+  throw new Error("No Gzip engine available (pako did not load and this browser lacks DecompressionStream).");
+}
+var isGz=function(u){return u.length>2&&u[0]===0x1f&&u[1]===0x8b};
+var isZ=function(u){return u.length>2&&u[0]===0x78&&(u[1]===0x01||u[1]===0x5e||u[1]===0x9c||u[1]===0xda)};
+
+/* ---------- format detection ---------- */
+async function detect(bytes){
+  if(bytes.length>=3&&bytes[0]===0xEF&&bytes[1]===0xBB&&bytes[2]===0xBF)bytes=bytes.subarray(3);
+  var kind,text;
+  if(isGz(bytes)){
+    kind="Binary Gzip";text=td.decode(await gunzip(bytes));
+  }else{
+    var t=td.decode(bytes).trim();
+    if(!t)throw new Error("Input is empty.");
+    if(t.charAt(0)==="<"){kind="Raw XML/Plist";text=t}
+    else{
+      var raw;
+      try{raw=fromB64(t)}catch(e){throw new Error("Unrecognized input: it is neither XML/Plist nor a Base64 string.")}
+      if(!isGz(raw)&&!isZ(raw))throw new Error("Base64 decoded, but the data is not Gzip-compressed.");
+      kind="Base64 + Gzip (encoded)";text=td.decode(await gunzip(raw)).trim();
+    }
+  }
+  text=text.replace(/^\uFEFF/,"");
+  if(text.charAt(0)!=="<")throw new Error("Decoded data is not XML/Plist (it may be a bare level string).");
+  return {kind:kind,encoded:kind!=="Raw XML/Plist",xml:text};
+}
+
+/* ---------- k4 (level data) handling ---------- */
+var K4=/(<k>k4<\/k><s>)([^<]*)(<\/s>)/;
+async function setK4(xml,mode){
+  var m=xml.match(K4);if(!m)return xml;
+  var v=m[2],comp=/^H4sI/.test(v);
+  if(mode==="decode"&&comp)v=td.decode(await gunzip(fromB64(v)));
+  else if(mode==="encode"&&!comp&&v.length)v=toB64Url(await gzip(te.encode(v)));
+  else return xml;
+  return xml.replace(K4,function(_,a,_b,c){return a+v+c});
+}
+
+/* ---------- UI ---------- */
+function say(cls,msg){var s=$("status");s.textContent="";var e=document.createElement("span");e.className=cls;e.textContent=msg;s.appendChild(e)}
+function fmtB(n){return n<1024?n+" B":(n/1024).toFixed(1)+" KB"}
+function setDl(on){document.querySelectorAll(".dl,#copy").forEach(function(b){b.disabled=!on})}
+function refresh(){
+  if(!R)return;
+  var v=$("view").value;if(v==="auto")v=R.encoded?"xml":"enc";
+  $("out").value=v==="xml"?R.xmlRead:R.enc;
+}
+function download(name,text){
+  var a=document.createElement("a"),u=URL.createObjectURL(new Blob([text],{type:"text/plain;charset=utf-8"}));
+  a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();
+  setTimeout(function(){URL.revokeObjectURL(u)},1000);
+}
+
+async function convert(){
+  R=null;setDl(false);$("out").value="";$("meta").textContent="";
+  var bytes;
+  if(fileBytes)bytes=fileBytes;
+  else{
+    var t=$("in").value;
+    if(!t.trim()){say("err","Nothing to convert. Choose a file or paste text first.");return}
+    bytes=te.encode(t);
+  }
+  $("go").disabled=true;
+  try{
+    var d=await detect(bytes);
+    var warn=[];
+    var doc=new DOMParser().parseFromString(d.xml,"application/xml");
+    if(doc.getElementsByTagName("parsererror").length)warn.push("XML is not well-formed");
+    else if(!doc.documentElement||doc.documentElement.nodeName!=="plist")warn.push("root element is not <plist>");
+    var xmlGD=await setK4(d.xml,"encode");                  /* k4 compressed for .gdlvl / .gmd */
+    var xmlRead=$("k4").checked?await setK4(d.xml,"decode"):d.xml;
+    var enc=toB64Url(await gzip(te.encode(xmlGD)));
+    R={encoded:d.encoded,xmlGD:xmlGD,xmlRead:xmlRead,enc:enc};
+    var nm=d.xml.match(/<k>k2<\/k><s>([^<]*)<\/s>/),ver=d.xml.match(/gjver="([^"]*)"/),k4=d.xml.match(K4);
+    R.name=nm?nm[1]:"";
+    var base=(fileBase||R.name||"level").replace(/[\\\/:*?"<>|\x00-\x1f]/g,"_").trim()||"level";
+    R.base=base;
+    refresh();setDl(true);
+    $("meta").textContent=
+      "Detected:   "+d.kind+"\nLevel name: "+(nm?nm[1]:"(none found)")+"\nPlist ver:  gjver "+(ver?ver[1]:"?")+
+      "\nLevel data: "+(!k4?"k4 not found":/^H4sI/.test(k4[2])?"k4 compressed":"k4 plain text")+
+      "\nSizes:      XML "+fmtB(te.encode(xmlGD).length)+" · .gdlvl "+fmtB(enc.length);
+    if(warn.length)say("warn","Converted with warnings: "+warn.join("; ")+".");
+    else say("ok",d.encoded?"Decoded successfully. Ready to download.":"Encoded successfully. Ready to download.");
+  }catch(e){say("err",e.message||String(e))}
+  $("go").disabled=false;
+}
+
+function loadFile(f){
+  if(!f)return;
+  if(f.size>50*1024*1024){say("err","File is larger than 50 MB.");return}
+  var r=new FileReader();
+  r.onerror=function(){say("err","Could not read the file.")};
+  r.onload=function(){
+    var u=new Uint8Array(r.result);
+    fileBase=f.name.replace(/\.[^.]*$/,"");
+    $("fname").textContent=f.name+" ("+fmtB(f.size)+")";
+    if(isGz(u)){fileBytes=u;$("in").value=""}
+    else{fileBytes=null;$("in").value=td.decode(u)}
+    say("","");
+  };
+  r.readAsArrayBuffer(f);
+}
+
+var drop=$("drop"),fi=$("file");
+drop.addEventListener("click",function(){fi.click()});
+drop.addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();fi.click()}});
+fi.addEventListener("change",function(){loadFile(fi.files[0]);fi.value=""});
+["dragenter","dragover"].forEach(function(n){drop.addEventListener(n,function(e){e.preventDefault();drop.classList.add("over")})});
+["dragleave","drop"].forEach(function(n){drop.addEventListener(n,function(e){e.preventDefault();drop.classList.remove("over")})});
+drop.addEventListener("drop",function(e){loadFile(e.dataTransfer.files[0])});
+$("in").addEventListener("input",function(){fileBytes=null;fileBase="";$("fname").textContent=".gdlvl, .gmd, .xml, .txt"});
+$("go").addEventListener("click",convert);
+$("view").addEventListener("change",refresh);
+$("k4").addEventListener("change",function(){if(R)convert()});
+$("clear").addEventListener("click",function(){
+  fileBytes=null;fileBase="";R=null;$("in").value="";$("out").value="";$("meta").textContent="";
+  $("fname").textContent=".gdlvl, .gmd, .xml, .txt";say("","");setDl(false);
+});
+$("copy").addEventListener("click",function(){
+  var t=$("out").value;
+  if(navigator.clipboard)navigator.clipboard.writeText(t).then(function(){say("ok","Copied to clipboard.")},function(){$("out").select();say("warn","Clipboard blocked. Text selected, press Ctrl/Cmd+C.")});
+  else{$("out").select();say("warn","Text selected, press Ctrl/Cmd+C.")}
+});
+document.querySelectorAll(".dl").forEach(function(b){b.addEventListener("click",function(){
+  if(!R)return;var t=b.getAttribute("data-t");
+  if(t==="gdlvl")download(R.base+".gdlvl",R.enc);
+  else if(t==="gmd")download(R.base+".gmd",R.xmlGD);
+  else download(R.base+"."+t,R.xmlRead);
+})});
+if(!window.pako)say("warn","pako.js could not be loaded from the CDN. Falling back to the browser’s built-in Gzip support.");
+})();
+</script>
+</body>
+</html>
